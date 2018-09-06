@@ -113,7 +113,13 @@
 
   <Target Name="_ServiceProjectReferenceGenerator_Core"
       Condition="'@(ServiceProjectReference)' != ''"
-      DependsOnTargets="@(ServiceProjectReference -> '%(DocumentGenerator)DocumentGenerator')" />
+      Inputs="@(ServiceProjectReference)"
+      Outputs="@(ServiceProjectReference -> '%(DocumentPath)')">
+    <MSBuild BuildInParallel="$(BuildInParallel)"
+        Projects="$(MSBuildProjectFullPath)"
+        Properties="GeneratorTargetPath=%(DocumentPath)"
+        Targets="%(DocumentGenerator)DocumentGenerator" />
+  </Target>
 
   <Target Name="ServiceProjectReferenceGenerator"
       Condition="'@(ServiceProjectReference)' != ''"
@@ -121,37 +127,22 @@
 
   <!-- DefaultDocumentGenerator -->
 
-  <Target Name="_DefaultDocumentGenerator_GetMetadata">
-    <ItemGroup>
-      <_Temporary Remove="@(_Temporary)" />
-      <_Temporary Include="@(ServiceProjectReference -> WithMetadataValue('DocumentGenerator', 'Default'))" />
-    </ItemGroup>
-
-    <Error Condition="'@(_Temporary)' != '' AND '%(_Temporary.Method)' != '' AND '%(_Temporary.Uri)' != ''"
-        Text="ServiceProjectReference items '@(_Temporary)' have both Method and Uri metadata." />
-    <Error Condition="'@(_Temporary)' != '' AND '%(_Temporary.Service)' != '' AND '%(_Temporary.Uri)' != ''"
-        Text="ServiceProjectReference items '@(_Temporary)' have both Service and Uri metadata." />
-  </Target>
-
-  <Target Name="_DefaultDocumentGenerator_Core" Inputs="%(_Temporary.ProjectTargetPath)" Outputs="%(_Temporary.DocumentPath)">
+  <Target Name="_DefaultDocumentGenerator_Core">
     <!-- aspnetcore2swagger -->
     <PropertyGroup>
       <_Command>dotnet getdocument --configuration $(Configuration) --no-build</_Command>
     </PropertyGroup>
     <ItemGroup>
+      <_Temporary Remove="@(_Temporary)" />
+      <_Temporary Include="@(ServiceProjectReference)" Condition="'%(DocumentPath)' == '$(GeneratorTargetPath)'" />
       <_Temporary Update="@(_Temporary)">
-        <Options
-          Condition="'%(_Temporary.Options)' == '' AND '$(DefaultDocumentGeneratorDefaultOptions)' != ''">$(DefaultDocumentGeneratorDefaultOptions)</Options>
         <Command>$(_Command) --project %(FullPath) --output %(DocumentPath) --framework %(TargetFramework)</Command>
-      </_Temporary>
-      <_Temporary Update="@(_Temporary)">
+        <Command Condition="'%(_Temporary.Method)' != ''">%(Command) --method %(_Temporary.Method)</Command>
+        <Command Condition="'%(_Temporary.Service)' != ''">%(Command) --service %(_Temporary.Service)</Command>
         <Command Condition="'%(_Temporary.Uri)' != ''">%(Command) --uri %(_Temporary.Uri)</Command>
-      </_Temporary>
-      <_Temporary Update="@(_Temporary)">
-        <Command Condition="'%(_Temporary.Service)' != ''">%(Command) --service %(_Temporary.Service) --method %(_Temporary.Method)</Command>
-      </_Temporary>
-      <_Temporary Update="@(_Temporary)">
-        <Command Condition="'%(_Temporary.Options)' != ''">%(Command) %(_Temporary.Options)</Command>
+        <DefaultDocumentGeneratorOptions
+          Condition="'%(_Temporary.DefaultDocumentGeneratorOptions)' == '' AND '$(DefaultDocumentGeneratorDefaultOptions)' != ''">$(DefaultDocumentGeneratorDefaultOptions)</DefaultDocumentGeneratorOptions>
+        <Command Condition="'%(_Temporary.DefaultDocumentGeneratorOptions)' != ''">%(Command) %(_Temporary.DefaultDocumentGeneratorOptions)</Command>
       </_Temporary>
     </ItemGroup>
 
@@ -227,7 +218,13 @@
 
   <Target Name="_ServiceFileReferenceGenerator_Core"
       Condition="'@(ServiceFileReference)' != ''"
-      DependsOnTargets="@(ServiceFileReference -> '%(CodeGenerator)CodeGenerator')" />
+      Inputs="@(ServiceFileReference)"
+      Outputs="@(ServiceFileReference -> '%(OutputPath)')">
+    <MSBuild BuildInParallel="$(BuildInParallel)"
+        Projects="$(MSBuildProjectFullPath)"
+        Properties="GeneratorTargetPath=%(OutputPath)"
+        Targets="%(CodeGenerator)CodeGenerator" />
+  </Target>
 
   <Target Name="ServiceFileReferenceGenerator" BeforeTargets="BeforeCompile" DependsOnTargets="$(ServiceFileReferenceGeneratorDependsOn)" />
 </Project>

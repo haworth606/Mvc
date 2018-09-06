@@ -27,7 +27,6 @@
     <ServiceFileReferenceTypeScriptNamespace Condition="'$(ServiceFileReferenceTypeScriptNamespace)' == ''">$(RootNamespace)</ServiceFileReferenceTypeScriptNamespace>
 
     <DefaultDocumentGeneratorDependsOn>
-      _DefaultDocumentGenerator_GetMetadata;
       _DefaultDocumentGenerator_Core;
       _DefaultDocumentGenerator_SetMetadata
     </DefaultDocumentGeneratorDependsOn>
